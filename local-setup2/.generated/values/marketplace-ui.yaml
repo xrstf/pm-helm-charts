@@ -1,0 +1,11 @@
+contentConfig:
+  baseDomain: portal.localhost
+  protocol: https
+exposure:
+  hostnames:
+    - portal.localhost
+    - '*.portal.localhost'
+gatewayApi:
+  enabled: true
+http:
+  protocol: https

@@ -439,3 +439,10 @@ tasks:
       - task: setup:mkcert
     cmds:
       - ./local-setup/scripts/start.sh {{.CLI_ARGS}}
+
+  local-setup2:
+    desc: "Experimental direct-Helm local setup without Flux/OCM/kro"
+    deps:
+      - task: setup:mkcert
+    cmds:
+      - ./local-setup2/scripts/start.sh {{.CLI_ARGS}}

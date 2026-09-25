@@ -1,0 +1,16 @@
+certManager:
+  createCA: true
+certificates:
+  create: true
+istio:
+  dnsNames:
+    - rebac-authz-webhook.platform-mesh-system.svc.cluster.local
+hostAliases:
+  enabled: true
+  entries:
+    - ip: 10.96.188.4
+      hostnames:
+        - portal.localhost
+        - kcp.api.portal.localhost
+        - root.kcp.portal.localhost
+        - triton.kcp.portal.localhost

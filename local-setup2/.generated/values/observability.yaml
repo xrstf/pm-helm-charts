@@ -1,0 +1,9 @@
+prometheus:
+  alertmanager:
+    enabled: true
+  server:
+    persistentVolume:
+      enabled: true
+serviceMonitors:
+  kcp:
+    enabled: false

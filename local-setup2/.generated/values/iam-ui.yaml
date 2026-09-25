@@ -1,0 +1,4 @@
+exposure:
+  hostnames:
+    - portal.localhost
+    - '*.portal.localhost'

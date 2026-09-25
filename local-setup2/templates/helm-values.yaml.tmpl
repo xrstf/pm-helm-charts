@@ -1,0 +1,446 @@
+account-operator:
+  crds:
+    enabled: false
+  kubeconfigSecret: account-operator-kubeconfig
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+
+cert-manager:
+  installCRDs: true
+
+extension-manager-operator:
+  crds:
+    enabled: false
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+
+iam-service:
+  caSecret: domain-certificate-ca
+  exposure:
+    hostnames:
+      - __BASE_DOMAIN__
+      - '*.__BASE_DOMAIN__'
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+  keycloak:
+    baseUrl: https://__BASE_DOMAIN__:8443/keycloak
+
+iam-ui:
+  exposure:
+    hostnames:
+      - __BASE_DOMAIN__
+      - '*.__BASE_DOMAIN__'
+
+infra:
+  cnpg:
+    enabled: true
+  dex:
+    enabled: true
+    gatewayApi:
+      hostnames:
+        - __BASE_DOMAIN__
+    issuer: https://__BASE_DOMAIN__:8443/dex
+    staticClient:
+      redirectURIs:
+        - https://__BASE_DOMAIN__:8443/keycloak/realms/default/broker/dex/endpoint
+  gatewayApi:
+    listeners:
+      - name: terminate
+        hostname: __BASE_DOMAIN__
+        port: 8443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: domain-certificate
+              namespace: platform-mesh-system
+      - name: terminate-wildstar
+        hostname: "*.__BASE_DOMAIN__"
+        port: 8443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: domain-certificate
+              namespace: platform-mesh-system
+      - name: passthrough
+        port: 8443
+        protocol: TLS
+        tls:
+          mode: Passthrough
+        allowedRoutes:
+          namespaces:
+            from: All
+    listenersExtra:
+      - name: terminate-services
+        hostname: "*.services.__BASE_DOMAIN__"
+        port: 8443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: domain-certificate
+              namespace: platform-mesh-system
+        allowedRoutes:
+          namespaces:
+            from: All
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+  kcp:
+    external:
+      hostname: kcp.api.__BASE_DOMAIN__
+    frontProxy:
+      clusterIP: __KCP_FRONT_PROXY_CLUSTER_IP__
+    rootShard:
+      hostname: root.kcp.__BASE_DOMAIN__
+      shardBaseURL: https://root.kcp.__BASE_DOMAIN__:8443/
+    shards:
+      - hostname: triton.kcp.__BASE_DOMAIN__
+        name: triton
+  keycloak:
+    gatewayApi:
+      hostnames:
+        - __BASE_DOMAIN__
+    keycloakConfig:
+      redirectUrls:
+        - https://__BASE_DOMAIN__:8443/callback*
+      url: http://keycloak-service.platform-mesh-system.svc.cluster.local:8080/keycloak
+    operator:
+      enabled: true
+      httpEnabled: true
+      admin:
+        username: keycloak-admin
+      caSecret: domain-certificate-ca
+      hostname: https://__BASE_DOMAIN__:8443/keycloak/
+    service:
+      name: keycloak-service
+      port: 8080
+
+init-agent:
+  kcpKubeconfig: init-agent-kubeconfig
+  configWorkspace: root:platform-mesh-system
+  hostAliases:
+    enabled: true
+    values:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+
+kubernetes-graphql-gateway:
+  gatewayApi:
+    httpRoute:
+      hostnames:
+        - __BASE_DOMAIN__
+        - '*.__BASE_DOMAIN__'
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+  kubeConfig:
+    secretName: kubernetes-graphql-gateway-kubeconfig
+  listener:
+    virtualWorkspacesConfig:
+      content:
+        virtualWorkspaces:
+          - kubeconfig: /app/kubeconfig/kubeconfig
+            name: contentconfigurations
+            url: https://frontproxy-front-proxy.platform-mesh-system:8443/services/contentconfigurations
+          - kubeconfig: /app/kubeconfig/kubeconfig
+            name: marketplace
+            url: https://frontproxy-front-proxy.platform-mesh-system:8443/services/marketplace
+      enabled: true
+  trust:
+    default:
+      audience: default
+      jwksUrl: http://keycloak-headless.platform-mesh-system:8080/keycloak/realms/default/protocol/openid-connect/certs
+      trustedIssuer: https://__BASE_DOMAIN__:8443/keycloak/realms/default
+
+marketplace-ui:
+  contentConfig:
+    baseDomain: __BASE_DOMAIN__
+    protocol: https
+  exposure:
+    hostnames:
+      - __BASE_DOMAIN__
+      - '*.__BASE_DOMAIN__'
+  gatewayApi:
+    enabled: true
+  http:
+    protocol: https
+
+observability:
+  prometheus:
+    alertmanager:
+      enabled: true
+    server:
+      persistentVolume:
+        enabled: true
+  serviceMonitors:
+    kcp:
+      enabled: false
+
+openfga:
+  checkQueryCache:
+    enabled: true
+    limit: 10000
+    ttl: 10s
+  datastore:
+    engine: postgres
+    maxOpenConns: 30
+    migrationType: initContainer
+    existingSecret: openfga-datastore-secret
+    secretKeys:
+      usernameKey: username
+      passwordKey: password
+  extraEnvVars:
+    - name: OPENFGA_EXPERIMENTALS
+      value: enable-list-users
+    - name: OPENFGA_DATASTORE_URI
+      value: postgres://platform-mesh-pg-rw.platform-mesh-system.svc.cluster.local:5432/openfga?sslmode=disable
+  migrate:
+    annotations:
+      sidecar.istio.io/inject: "false"
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "2112"
+  replicaCount: 1
+  telemetry:
+    trace:
+      enabled: true
+      otlp:
+        endpoint: observability-opentelemetry-collector.openmfp-observability.svc.cluster.local:4317
+        tls:
+          enabled: false
+
+opentelemetry-operator:
+  admissionWebhooks:
+    autoGenerateCert:
+      enabled: true
+    certManager:
+      enabled: false
+  manager:
+    featureGatesMap:
+      operator.targetallocator.mtls: true
+
+platform-mesh-operator:
+  extraArgs:
+    - --kcp-front-proxy-port=8443
+    - --kcp-url=https://frontproxy-front-proxy.platform-mesh-system:8443
+    - --subroutines-feature-toggles-enabled=true
+    - --idp-welcome-additional-redirect-uris=https://__BASE_DOMAIN__:8443/callback*
+    - --idp-welcome-additional-post-logout-redirect-uris=https://__BASE_DOMAIN__:8443/logout*
+    - --subroutines-managed-provider-deploy-enabled=false
+    - --subroutines-deployment-enabled=false
+  extraVolumeMounts:
+    - mountPath: /etc/platformmesh
+      name: external-platformmesh-deployment
+      readOnly: true
+  extraVolumes:
+    - name: external-platformmesh-deployment
+      secret:
+        defaultMode: 420
+        optional: true
+        secretName: platform-mesh-kubeconfig
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+  idp:
+    registrationAllowed: true
+
+portal:
+  auth:
+    default:
+      baseDomain: __BASE_DOMAIN__
+      clientId: welcome
+      clientSecretKey: attribute.client_secret
+      clientSecretName: portal-client-secret-welcome
+      discoveryUrl: https://__BASE_DOMAIN__:8443/keycloak/realms/${org-name}/.well-known/openid-configuration
+  cookieDomain: __BASE_DOMAIN__
+  crdGatewayApiUrl: https://${org-subdomain}__BASE_DOMAIN__/api/kubernetes-graphql-gateway/root:orgs:${org-name}/graphql
+  environment: production
+  extraEnvVars:
+    - name: OPENMFP_PORTAL_CONTEXT_IAM_SERVICE_API_URL
+      value: https://${org-subdomain}__BASE_DOMAIN__:8443/iam/graphql
+    - name: OPENMFP_PORTAL_CONTEXT_CRD_GATEWAY_API_URL
+      value: https://${org-subdomain}__BASE_DOMAIN__:8443/gateway/api/clusters/root:orgs:${org-name}/graphql
+    - name: NODE_EXTRA_CA_CERTS
+      value: /etc/ssl/certs/ca-bundle.crt
+    - name: OPENMFP_PORTAL_CONTEXT_AUTHZ_WEBHOOK_URL
+      value: https://rebac-authz-webhook.platform-mesh-system.svc.cluster.local:9443
+  extraVolumeMounts:
+    - mountPath: /etc/ssl/certs/ca-bundle.crt
+      name: combined-ca
+      readOnly: true
+      subPath: ca-bundle.crt
+  extraVolumes:
+    - name: domain-ca
+      secret:
+        secretName: domain-certificate-ca
+    - name: webhook-ca
+      secret:
+        secretName: rebac-authz-webhook-cert
+    - emptyDir: {}
+      name: combined-ca
+  frontendPort: "8443"
+  gatewayApi:
+    httpRoute:
+      hostnames:
+        - __BASE_DOMAIN__
+        - '*.__BASE_DOMAIN__'
+      parentRefs:
+        - kind: Gateway
+          name: k8sapi-gateway
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+  http:
+    protocol: https
+  initContainers:
+    - command:
+        - sh
+        - -c
+        - cat /domain-ca/tls.crt /webhook-ca/ca.crt > /combined-ca/ca-bundle.crt
+      image: busybox:1.36
+      name: combine-ca
+      securityContext:
+        runAsUser: 1000
+      volumeMounts:
+        - mountPath: /domain-ca
+          name: domain-ca
+          readOnly: true
+        - mountPath: /webhook-ca
+          name: webhook-ca
+          readOnly: true
+        - mountPath: /combined-ca
+          name: combined-ca
+  kcp:
+    kubeconfigSecret: portal-kubeconfig
+
+rebac-authz-webhook:
+  certManager:
+    createCA: true
+  certificates:
+    create: true
+  istio:
+    dnsNames:
+      - rebac-authz-webhook.platform-mesh-system.svc.cluster.local
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+
+security-operator:
+  crds:
+    enabled: false
+  baseDomain: __BASE_DOMAIN__:8443
+  caSecret: domain-certificate-ca
+  idp:
+    smtp:
+      server: ""
+      port: ""
+      fromAddress: ""
+    additionalRedirectUrls:
+      - https://__BASE_DOMAIN__:8443/callback*
+    registrationAllowed: true
+    allowUnverifiedEmails: true
+    setDefaultPassword: false
+  keycloak:
+    baseUrl: https://__BASE_DOMAIN__:8443/keycloak
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__
+  kubeconfigSecret: security-operator-kubeconfig
+
+traefik:
+  experimental:
+    kubernetesGateway:
+      enabled: true
+  gateway:
+    enabled: false
+  gatewayClass:
+    enabled: true
+  ports:
+    websecure:
+      exposedPort: 8443
+      nodePort: __TRAEFIK_NODE_PORT__
+  providers:
+    kubernetesGateway:
+      enabled: true
+      experimentalChannel: true
+  service:
+    type: NodePort
+    spec:
+      type: NodePort
+      clusterIP: __TRAEFIK_CLUSTER_IP__
+
+virtual-workspaces:
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: __TRAEFIK_CLUSTER_IP__
+        hostnames:
+          - __BASE_DOMAIN__
+          - kcp.api.__BASE_DOMAIN__
+          - root.kcp.__BASE_DOMAIN__
+          - triton.kcp.__BASE_DOMAIN__

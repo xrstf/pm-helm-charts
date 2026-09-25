@@ -1,0 +1,446 @@
+account-operator:
+  crds:
+    enabled: false
+  kubeconfigSecret: account-operator-kubeconfig
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+
+cert-manager:
+  installCRDs: true
+
+extension-manager-operator:
+  crds:
+    enabled: false
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+
+iam-service:
+  caSecret: domain-certificate-ca
+  exposure:
+    hostnames:
+      - portal.localhost
+      - '*.portal.localhost'
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+  keycloak:
+    baseUrl: https://portal.localhost:8443/keycloak
+
+iam-ui:
+  exposure:
+    hostnames:
+      - portal.localhost
+      - '*.portal.localhost'
+
+infra:
+  cnpg:
+    enabled: true
+  dex:
+    enabled: true
+    gatewayApi:
+      hostnames:
+        - portal.localhost
+    issuer: https://portal.localhost:8443/dex
+    staticClient:
+      redirectURIs:
+        - https://portal.localhost:8443/keycloak/realms/default/broker/dex/endpoint
+  gatewayApi:
+    listeners:
+      - name: terminate
+        hostname: portal.localhost
+        port: 8443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: domain-certificate
+              namespace: platform-mesh-system
+      - name: terminate-wildstar
+        hostname: "*.portal.localhost"
+        port: 8443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: domain-certificate
+              namespace: platform-mesh-system
+      - name: passthrough
+        port: 8443
+        protocol: TLS
+        tls:
+          mode: Passthrough
+        allowedRoutes:
+          namespaces:
+            from: All
+    listenersExtra:
+      - name: terminate-services
+        hostname: "*.services.portal.localhost"
+        port: 8443
+        protocol: HTTPS
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: domain-certificate
+              namespace: platform-mesh-system
+        allowedRoutes:
+          namespaces:
+            from: All
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+  kcp:
+    external:
+      hostname: kcp.api.portal.localhost
+    frontProxy:
+      clusterIP: 10.96.0.100
+    rootShard:
+      hostname: root.kcp.portal.localhost
+      shardBaseURL: https://root.kcp.portal.localhost:8443/
+    shards:
+      - hostname: triton.kcp.portal.localhost
+        name: triton
+  keycloak:
+    gatewayApi:
+      hostnames:
+        - portal.localhost
+    keycloakConfig:
+      redirectUrls:
+        - https://portal.localhost:8443/callback*
+      url: http://keycloak-service.platform-mesh-system.svc.cluster.local:8080/keycloak
+    operator:
+      enabled: true
+      httpEnabled: true
+      admin:
+        username: keycloak-admin
+      caSecret: domain-certificate-ca
+      hostname: https://portal.localhost:8443/keycloak/
+    service:
+      name: keycloak-service
+      port: 8080
+
+init-agent:
+  kcpKubeconfig: init-agent-kubeconfig
+  configWorkspace: root:platform-mesh-system
+  hostAliases:
+    enabled: true
+    values:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+
+kubernetes-graphql-gateway:
+  gatewayApi:
+    httpRoute:
+      hostnames:
+        - portal.localhost
+        - '*.portal.localhost'
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+  kubeConfig:
+    secretName: kubernetes-graphql-gateway-kubeconfig
+  listener:
+    virtualWorkspacesConfig:
+      content:
+        virtualWorkspaces:
+          - kubeconfig: /app/kubeconfig/kubeconfig
+            name: contentconfigurations
+            url: https://frontproxy-front-proxy.platform-mesh-system:8443/services/contentconfigurations
+          - kubeconfig: /app/kubeconfig/kubeconfig
+            name: marketplace
+            url: https://frontproxy-front-proxy.platform-mesh-system:8443/services/marketplace
+      enabled: true
+  trust:
+    default:
+      audience: default
+      jwksUrl: http://keycloak-headless.platform-mesh-system:8080/keycloak/realms/default/protocol/openid-connect/certs
+      trustedIssuer: https://portal.localhost:8443/keycloak/realms/default
+
+marketplace-ui:
+  contentConfig:
+    baseDomain: portal.localhost
+    protocol: https
+  exposure:
+    hostnames:
+      - portal.localhost
+      - '*.portal.localhost'
+  gatewayApi:
+    enabled: true
+  http:
+    protocol: https
+
+observability:
+  prometheus:
+    alertmanager:
+      enabled: true
+    server:
+      persistentVolume:
+        enabled: true
+  serviceMonitors:
+    kcp:
+      enabled: false
+
+openfga:
+  checkQueryCache:
+    enabled: true
+    limit: 10000
+    ttl: 10s
+  datastore:
+    engine: postgres
+    maxOpenConns: 30
+    migrationType: initContainer
+    existingSecret: openfga-datastore-secret
+    secretKeys:
+      usernameKey: username
+      passwordKey: password
+  extraEnvVars:
+    - name: OPENFGA_EXPERIMENTALS
+      value: enable-list-users
+    - name: OPENFGA_DATASTORE_URI
+      value: postgres://platform-mesh-pg-rw.platform-mesh-system.svc.cluster.local:5432/openfga?sslmode=disable
+  migrate:
+    annotations:
+      sidecar.istio.io/inject: "false"
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "2112"
+  replicaCount: 1
+  telemetry:
+    trace:
+      enabled: true
+      otlp:
+        endpoint: observability-opentelemetry-collector.openmfp-observability.svc.cluster.local:4317
+        tls:
+          enabled: false
+
+opentelemetry-operator:
+  admissionWebhooks:
+    autoGenerateCert:
+      enabled: true
+    certManager:
+      enabled: false
+  manager:
+    featureGatesMap:
+      operator.targetallocator.mtls: true
+
+platform-mesh-operator:
+  extraArgs:
+    - --kcp-front-proxy-port=8443
+    - --kcp-url=https://frontproxy-front-proxy.platform-mesh-system:8443
+    - --subroutines-feature-toggles-enabled=true
+    - --idp-welcome-additional-redirect-uris=https://portal.localhost:8443/callback*
+    - --idp-welcome-additional-post-logout-redirect-uris=https://portal.localhost:8443/logout*
+    - --subroutines-managed-provider-deploy-enabled=false
+    - --subroutines-deployment-enabled=false
+  extraVolumeMounts:
+    - mountPath: /etc/platformmesh
+      name: external-platformmesh-deployment
+      readOnly: true
+  extraVolumes:
+    - name: external-platformmesh-deployment
+      secret:
+        defaultMode: 420
+        optional: true
+        secretName: platform-mesh-kubeconfig
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+  idp:
+    registrationAllowed: true
+
+portal:
+  auth:
+    default:
+      baseDomain: portal.localhost
+      clientId: welcome
+      clientSecretKey: attribute.client_secret
+      clientSecretName: portal-client-secret-welcome
+      discoveryUrl: https://portal.localhost:8443/keycloak/realms/${org-name}/.well-known/openid-configuration
+  cookieDomain: portal.localhost
+  crdGatewayApiUrl: https://${org-subdomain}portal.localhost/api/kubernetes-graphql-gateway/root:orgs:${org-name}/graphql
+  environment: production
+  extraEnvVars:
+    - name: OPENMFP_PORTAL_CONTEXT_IAM_SERVICE_API_URL
+      value: https://${org-subdomain}portal.localhost:8443/iam/graphql
+    - name: OPENMFP_PORTAL_CONTEXT_CRD_GATEWAY_API_URL
+      value: https://${org-subdomain}portal.localhost:8443/gateway/api/clusters/root:orgs:${org-name}/graphql
+    - name: NODE_EXTRA_CA_CERTS
+      value: /etc/ssl/certs/ca-bundle.crt
+    - name: OPENMFP_PORTAL_CONTEXT_AUTHZ_WEBHOOK_URL
+      value: https://rebac-authz-webhook.platform-mesh-system.svc.cluster.local:9443
+  extraVolumeMounts:
+    - mountPath: /etc/ssl/certs/ca-bundle.crt
+      name: combined-ca
+      readOnly: true
+      subPath: ca-bundle.crt
+  extraVolumes:
+    - name: domain-ca
+      secret:
+        secretName: domain-certificate-ca
+    - name: webhook-ca
+      secret:
+        secretName: rebac-authz-webhook-cert
+    - emptyDir: {}
+      name: combined-ca
+  frontendPort: "8443"
+  gatewayApi:
+    httpRoute:
+      hostnames:
+        - portal.localhost
+        - '*.portal.localhost'
+      parentRefs:
+        - kind: Gateway
+          name: k8sapi-gateway
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+  http:
+    protocol: https
+  initContainers:
+    - command:
+        - sh
+        - -c
+        - cat /domain-ca/tls.crt /webhook-ca/ca.crt > /combined-ca/ca-bundle.crt
+      image: busybox:1.36
+      name: combine-ca
+      securityContext:
+        runAsUser: 1000
+      volumeMounts:
+        - mountPath: /domain-ca
+          name: domain-ca
+          readOnly: true
+        - mountPath: /webhook-ca
+          name: webhook-ca
+          readOnly: true
+        - mountPath: /combined-ca
+          name: combined-ca
+  kcp:
+    kubeconfigSecret: portal-kubeconfig
+
+rebac-authz-webhook:
+  certManager:
+    createCA: true
+  certificates:
+    create: true
+  istio:
+    dnsNames:
+      - rebac-authz-webhook.platform-mesh-system.svc.cluster.local
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+
+security-operator:
+  crds:
+    enabled: false
+  baseDomain: portal.localhost:8443
+  caSecret: domain-certificate-ca
+  idp:
+    smtp:
+      server: ""
+      port: ""
+      fromAddress: ""
+    additionalRedirectUrls:
+      - https://portal.localhost:8443/callback*
+    registrationAllowed: true
+    allowUnverifiedEmails: true
+    setDefaultPassword: false
+  keycloak:
+    baseUrl: https://portal.localhost:8443/keycloak
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost
+  kubeconfigSecret: security-operator-kubeconfig
+
+traefik:
+  experimental:
+    kubernetesGateway:
+      enabled: true
+  gateway:
+    enabled: false
+  gatewayClass:
+    enabled: true
+  ports:
+    websecure:
+      exposedPort: 8443
+      nodePort: 31000
+  providers:
+    kubernetesGateway:
+      enabled: true
+      experimentalChannel: true
+  service:
+    type: NodePort
+    spec:
+      type: NodePort
+      clusterIP: 10.96.188.4
+
+virtual-workspaces:
+  hostAliases:
+    enabled: true
+    entries:
+      - ip: 10.96.188.4
+        hostnames:
+          - portal.localhost
+          - kcp.api.portal.localhost
+          - root.kcp.portal.localhost
+          - triton.kcp.portal.localhost

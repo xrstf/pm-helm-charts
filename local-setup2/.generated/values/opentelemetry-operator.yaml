@@ -1,0 +1,8 @@
+admissionWebhooks:
+  autoGenerateCert:
+    enabled: true
+  certManager:
+    enabled: false
+manager:
+  featureGatesMap:
+    operator.targetallocator.mtls: true

@@ -1,0 +1,16 @@
+caSecret: domain-certificate-ca
+exposure:
+  hostnames:
+    - portal.localhost
+    - '*.portal.localhost'
+hostAliases:
+  enabled: true
+  entries:
+    - ip: 10.96.188.4
+      hostnames:
+        - portal.localhost
+        - kcp.api.portal.localhost
+        - root.kcp.portal.localhost
+        - triton.kcp.portal.localhost
+keycloak:
+  baseUrl: https://portal.localhost:8443/keycloak

@@ -1,0 +1,20 @@
+experimental:
+  kubernetesGateway:
+    enabled: true
+gateway:
+  enabled: false
+gatewayClass:
+  enabled: true
+ports:
+  websecure:
+    exposedPort: 8443
+    nodePort: 31000
+providers:
+  kubernetesGateway:
+    enabled: true
+    experimentalChannel: true
+service:
+  type: NodePort
+  spec:
+    type: NodePort
+    clusterIP: 10.96.188.4

@@ -1,0 +1,93 @@
+cnpg:
+  enabled: true
+dex:
+  enabled: true
+  gatewayApi:
+    hostnames:
+      - portal.localhost
+  issuer: https://portal.localhost:8443/dex
+  staticClient:
+    redirectURIs:
+      - https://portal.localhost:8443/keycloak/realms/default/broker/dex/endpoint
+gatewayApi:
+  listeners:
+    - name: terminate
+      hostname: portal.localhost
+      port: 8443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: domain-certificate
+            namespace: platform-mesh-system
+    - name: terminate-wildstar
+      hostname: "*.portal.localhost"
+      port: 8443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: domain-certificate
+            namespace: platform-mesh-system
+    - name: passthrough
+      port: 8443
+      protocol: TLS
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        namespaces:
+          from: All
+  listenersExtra:
+    - name: terminate-services
+      hostname: "*.services.portal.localhost"
+      port: 8443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: domain-certificate
+            namespace: platform-mesh-system
+      allowedRoutes:
+        namespaces:
+          from: All
+hostAliases:
+  enabled: true
+  entries:
+    - ip: 10.96.188.4
+      hostnames:
+        - portal.localhost
+        - kcp.api.portal.localhost
+        - root.kcp.portal.localhost
+        - triton.kcp.portal.localhost
+kcp:
+  external:
+    hostname: kcp.api.portal.localhost
+  frontProxy:
+    clusterIP: 10.96.0.100
+  rootShard:
+    hostname: root.kcp.portal.localhost
+    shardBaseURL: https://root.kcp.portal.localhost:8443/
+  shards:
+    - hostname: triton.kcp.portal.localhost
+      name: triton
+keycloak:
+  gatewayApi:
+    hostnames:
+      - portal.localhost
+  keycloakConfig:
+    redirectUrls:
+      - https://portal.localhost:8443/callback*
+    url: http://keycloak-service.platform-mesh-system.svc.cluster.local:8080/keycloak
+  operator:
+    enabled: true
+    httpEnabled: true
+    admin:
+      username: keycloak-admin
+    caSecret: domain-certificate-ca
+    hostname: https://portal.localhost:8443/keycloak/
+  service:
+    name: keycloak-service
+    port: 8080

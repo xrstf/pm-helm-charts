@@ -1,0 +1,30 @@
+checkQueryCache:
+  enabled: true
+  limit: 10000
+  ttl: 10s
+datastore:
+  engine: postgres
+  maxOpenConns: 30
+  migrationType: initContainer
+  existingSecret: openfga-datastore-secret
+  secretKeys:
+    usernameKey: username
+    passwordKey: password
+extraEnvVars:
+  - name: OPENFGA_EXPERIMENTALS
+    value: enable-list-users
+  - name: OPENFGA_DATASTORE_URI
+    value: postgres://platform-mesh-pg-rw.platform-mesh-system.svc.cluster.local:5432/openfga?sslmode=disable
+migrate:
+  annotations:
+    sidecar.istio.io/inject: "false"
+podAnnotations:
+  traffic.sidecar.istio.io/excludeInboundPorts: "2112"
+replicaCount: 1
+telemetry:
+  trace:
+    enabled: true
+    otlp:
+      endpoint: observability-opentelemetry-collector.openmfp-observability.svc.cluster.local:4317
+      tls:
+        enabled: false

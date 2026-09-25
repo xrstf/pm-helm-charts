@@ -1,0 +1,29 @@
+extraArgs:
+  - --kcp-front-proxy-port=8443
+  - --kcp-url=https://frontproxy-front-proxy.platform-mesh-system:8443
+  - --subroutines-feature-toggles-enabled=true
+  - --idp-welcome-additional-redirect-uris=https://portal.localhost:8443/callback*
+  - --idp-welcome-additional-post-logout-redirect-uris=https://portal.localhost:8443/logout*
+  - --subroutines-managed-provider-deploy-enabled=false
+  - --subroutines-deployment-enabled=false
+extraVolumeMounts:
+  - mountPath: /etc/platformmesh
+    name: external-platformmesh-deployment
+    readOnly: true
+extraVolumes:
+  - name: external-platformmesh-deployment
+    secret:
+      defaultMode: 420
+      optional: true
+      secretName: platform-mesh-kubeconfig
+hostAliases:
+  enabled: true
+  entries:
+    - ip: 10.96.188.4
+      hostnames:
+        - portal.localhost
+        - kcp.api.portal.localhost
+        - root.kcp.portal.localhost
+        - triton.kcp.portal.localhost
+idp:
+  registrationAllowed: true

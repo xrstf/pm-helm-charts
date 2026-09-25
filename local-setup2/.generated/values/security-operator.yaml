@@ -1,0 +1,26 @@
+crds:
+  enabled: false
+baseDomain: portal.localhost:8443
+caSecret: domain-certificate-ca
+idp:
+  smtp:
+    server: ""
+    port: ""
+    fromAddress: ""
+  additionalRedirectUrls:
+    - https://portal.localhost:8443/callback*
+  registrationAllowed: true
+  allowUnverifiedEmails: true
+  setDefaultPassword: false
+keycloak:
+  baseUrl: https://portal.localhost:8443/keycloak
+hostAliases:
+  enabled: true
+  entries:
+    - ip: 10.96.188.4
+      hostnames:
+        - portal.localhost
+        - kcp.api.portal.localhost
+        - root.kcp.portal.localhost
+        - triton.kcp.portal.localhost
+kubeconfigSecret: security-operator-kubeconfig

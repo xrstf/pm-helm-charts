@@ -1,0 +1,40 @@
+apiVersion: core.platform-mesh.io/v1alpha1
+kind: PlatformMesh
+metadata:
+  name: platform-mesh
+  namespace: platform-mesh-system
+spec:
+  exposure:
+    baseDomain: portal.localhost
+    kcpFrontProxyClusterIP: 10.96.0.100
+    port: 8443
+    protocol: https
+    traefikClusterIP: 10.96.188.4
+  profileConfigMap:
+    name: platform-mesh-profile
+    namespace: platform-mesh-system
+  featureToggles:
+    - name: feature-enable-getting-started
+    - name: feature-disable-email-verification
+    - name: feature-accounts-in-accounts
+    - name: feature-enable-provider-permissions
+  kcp: {}
+  ocm:
+    component:
+      name: platform-mesh
+    referencePath: []
+    repo:
+      name: platform-mesh
+  values:
+    services:
+      infra:
+        values:
+          kcp:
+            external:
+              hostname: kcp.api.portal.localhost
+            rootShard:
+              hostname: root.kcp.portal.localhost
+              shardBaseURL: https://root.kcp.portal.localhost:8443/
+            shards:
+              - hostname: triton.kcp.portal.localhost
+                name: triton
